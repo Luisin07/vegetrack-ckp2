@@ -10,7 +10,7 @@ continua aqui com o status e o pull request que a pagou.
 |----|--------|-----------|--------|
 | DT-01 | Regra de avaliação de risco duplicada e fora do domínio | 🔴 Alta | ✅ Paga — refatoração 1 |
 | DT-02 | Casos de uso instanciam o armazenamento em arquivo por dentro | 🔴 Alta | ✅ Paga — refatoração 2 |
-| DT-03 | Cadeia de `if` decide método de roçada, equipes e EPI | 🟠 Média | A pagar — refatoração 3 |
+| DT-03 | Cadeia de `if` decide método de roçada, equipes e EPI | 🟠 Média | ✅ Paga — refatoração 3 |
 | DT-04 | `AvaliarTrecho` conhece os detalhes do contexto de Manutenção | 🟠 Média | A pagar — refatoração 4 |
 | DT-05 | Persistência em um único arquivo JSON reescrito a cada operação | 🔴 Alta | Aberta |
 | DT-06 | Órgão regulador e prazo de 48 h fixos no código | 🟠 Média | Aberta |
