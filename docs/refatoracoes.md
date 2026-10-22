@@ -51,3 +51,51 @@ editar uma constante e a fila e a ordem nunca mais divergem. A função principa
 
 **Commits:** constantes → taxa em `Trecho` → classificação em `Trecho.avaliar` → prioridade/prazo em
 `PlanoDeRegularizacao`.
+
+---
+
+## Refatoração 2 — Portas e adaptadores (componente redesenhado)
+
+**Code smell:** acoplamento excessivo — a camada de aplicação dependia de um adaptador concreto.
+Os 5 casos de uso faziam `ArmazenamentoEmArquivo(self._caminho_dos_dados)` dentro de `executar`, e
+os testes de caso de uso gravavam em disco.
+
+**Antes** — `aplicacao/avaliar_trecho.py`:
+
+```python
+class AvaliarTrecho:
+    def __init__(self, caminho_dos_dados: Path) -> None:
+        self._caminho_dos_dados = caminho_dos_dados
+
+    def executar(self, trecho_id: str, hoje: date) -> ResultadoDaAvaliacao:
+        dados = ArmazenamentoEmArquivo(self._caminho_dos_dados)  # adaptador criado por dentro
+        trecho = dados.buscar_trecho(trecho_id)
+```
+
+**Depois** — o caso de uso recebe as portas; quem escolhe o adaptador é a raiz de composição (CLI):
+
+```python
+class AvaliarTrecho:
+    def __init__(
+        self,
+        trechos: RepositorioDeTrechos,  # porta declarada em monitoramento/dominio/portas.py
+        ordens: RepositorioDeOrdens,  # portas declaradas em manutencao/dominio/portas.py
+        violacoes: RepositorioDeViolacoes,
+    ) -> None: ...
+```
+
+| Porta (domínio) | Adaptador em memória | Adaptador em arquivo |
+|---|---|---|
+| `RepositorioDeTrechos` | `RepositorioDeTrechosEmMemoria` | `RepositorioDeTrechosEmArquivo` |
+| `RepositorioDeOrdens` | `RepositorioDeOrdensEmMemoria` | `RepositorioDeOrdensEmArquivo` |
+| `RepositorioDeViolacoes` | `RepositorioDeViolacoesEmMemoria` | `RepositorioDeViolacoesEmArquivo` |
+
+**O que melhorou:** trocar o arquivo por banco no Checkpoint 3 é escrever um adaptador novo; nenhum
+caso de uso muda. Os testes dos casos de uso rodam com o adaptador em memória, sem disco, e os testes
+de contrato (`tests/contratos/`) provam que os dois adaptadores se comportam igual. Medido pelo
+`import-linter`: antes, o contrato "aplicação não importa adaptadores" **quebrava em 5 imports**;
+depois, **3 contratos mantidos, 0 quebrados**, verificados a cada pull request.
+
+**Nota honesta:** um teste de caracterização dependia de o armazenamento em arquivo devolver cópias
+dos objetos. Ele foi corrigido num commit `test:` próprio, **antes** da refatoração, sem mudar a regra
+que verifica; a partir daí a mesma suíte passou antes e depois de cada commit `refactor:`.
