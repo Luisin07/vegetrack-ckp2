@@ -26,6 +26,8 @@ src = ["src", "tests"]
 [tool.ruff.lint]
 # E/F: erros básicos | I: ordem de imports | N: nomes PEP 8 | B: bugs comuns | UP: sintaxe moderna | SIM: simplificações | C90: complexidade
 select = ["E", "F", "I", "N", "B", "UP", "SIM", "C90"]
+# N818 exige sufixo "Error" em inglês; exceções seguem a linguagem ubíqua (AlturaInvalida, TrechoNaoEncontrado)
+ignore = ["N818"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 8
