@@ -8,7 +8,7 @@ continua aqui com o status e o pull request que a pagou.
 
 | ID | Dívida | Prioridade | Status |
 |----|--------|-----------|--------|
-| DT-01 | Regra de avaliação de risco duplicada e fora do domínio | 🔴 Alta | A pagar — refatoração 1 |
+| DT-01 | Regra de avaliação de risco duplicada e fora do domínio | 🔴 Alta | ✅ Paga — refatoração 1 |
 | DT-02 | Casos de uso instanciam o armazenamento em arquivo por dentro | 🔴 Alta | A pagar — refatoração 2 |
 | DT-03 | Cadeia de `if` decide método de roçada, equipes e EPI | 🟠 Média | A pagar — refatoração 3 |
 | DT-04 | `AvaliarTrecho` conhece os detalhes do contexto de Manutenção | 🟠 Média | A pagar — refatoração 4 |
