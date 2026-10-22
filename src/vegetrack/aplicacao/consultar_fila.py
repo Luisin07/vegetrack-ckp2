@@ -8,7 +8,13 @@ from datetime import date
 from pathlib import Path
 
 from vegetrack.adaptadores.armazenamento_em_arquivo import ArmazenamentoEmArquivo
-from vegetrack.monitoramento.dominio.avaliacao_de_risco import AvaliacaoDeRisco, NivelDeRisco
+from vegetrack.monitoramento.dominio.avaliacao_de_risco import (
+    DIAS_PARA_ATENCAO,
+    DIAS_PARA_CRITICO,
+    LIMITE_CONTRATUAL_CM,
+    AvaliacaoDeRisco,
+    NivelDeRisco,
+)
 from vegetrack.monitoramento.dominio.trecho import Trecho
 
 
@@ -46,13 +52,15 @@ class ConsultarFilaDeTrechos:
             anterior = medicoes[-2]
             taxa = (altura - anterior.altura.centimetros) / (ultima.data - anterior.data).days
         dias_ate_limite = None
-        if altura >= 30:
+        if altura >= LIMITE_CONTRATUAL_CM:
             dias_ate_limite = 0
         elif taxa is not None and taxa > 0:
-            dias_ate_limite = math.floor((30 - altura) / taxa)
-        if altura >= 30 or (dias_ate_limite is not None and dias_ate_limite <= 2):
+            dias_ate_limite = math.floor((LIMITE_CONTRATUAL_CM - altura) / taxa)
+        if altura >= LIMITE_CONTRATUAL_CM or (
+            dias_ate_limite is not None and dias_ate_limite <= DIAS_PARA_CRITICO
+        ):
             nivel = NivelDeRisco.CRITICO
-        elif dias_ate_limite is not None and dias_ate_limite <= 7:
+        elif dias_ate_limite is not None and dias_ate_limite <= DIAS_PARA_ATENCAO:
             nivel = NivelDeRisco.ATENCAO
         else:
             nivel = NivelDeRisco.CONFORME

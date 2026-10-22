@@ -4,7 +4,12 @@ Value object da data-limite para regularizar um trecho e da sua origem contratua
 """
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
+
+PRAZO_CONTRATUAL_DE_REGULARIZACAO = timedelta(days=2)
+ORIGEM_CONTRATUAL = "Contrato ARTESP — 48 h"
+ORIGEM_PROJECAO = "Projeção de crescimento"
+ORGAO_REGULADOR = "ARTESP"
 
 
 @dataclass(frozen=True, order=True)

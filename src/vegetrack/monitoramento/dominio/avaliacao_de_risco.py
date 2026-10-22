@@ -9,6 +9,10 @@ from enum import IntEnum
 
 from vegetrack.monitoramento.dominio.altura_vegetacao import AlturaVegetacao
 
+LIMITE_CONTRATUAL_CM = 30.0
+DIAS_PARA_CRITICO = 2
+DIAS_PARA_ATENCAO = 7
+
 
 class NivelDeRisco(IntEnum):
     CONFORME = 0
