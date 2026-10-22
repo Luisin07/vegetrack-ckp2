@@ -1,0 +1,49 @@
+[project]
+name = "vegetrack"
+version = "0.2.0"
+description = "Monitoramento de vegetação na faixa de domínio rodoviária — FIAP Engenharia de Software, Checkpoint 2"
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.coverage.run]
+source = ["src/vegetrack"]
+omit = ["src/vegetrack/__main__.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+# E/F: erros básicos | I: ordem de imports | N: nomes PEP 8 | B: bugs comuns | UP: sintaxe moderna | SIM: simplificações | C90: complexidade
+select = ["E", "F", "I", "N", "B", "UP", "SIM", "C90"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 8
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.importlinter]
+root_package = "vegetrack"
+
+[[tool.importlinter.contracts]]
+name = "Dominio de monitoramento nao depende de aplicacao nem de adaptadores"
+type = "forbidden"
+source_modules = ["vegetrack.monitoramento"]
+forbidden_modules = ["vegetrack.aplicacao", "vegetrack.adaptadores", "vegetrack.manutencao"]
+
+[[tool.importlinter.contracts]]
+name = "Dominio de manutencao nao depende de aplicacao nem de adaptadores"
+type = "forbidden"
+source_modules = ["vegetrack.manutencao"]
+forbidden_modules = ["vegetrack.aplicacao", "vegetrack.adaptadores", "vegetrack.monitoramento"]
