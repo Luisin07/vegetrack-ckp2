@@ -1,0 +1,43 @@
+Relatório de cobertura — pytest --cov --cov-report=term-missing (Python 3.12+)
+
+_______________ coverage: platform linux, python 3.13.16-final-0 _______________
+Name                                                         Stmts   Miss  Cover   Missing
+------------------------------------------------------------------------------------------
+src/vegetrack/__init__.py                                        0      0   100%
+src/vegetrack/adaptadores/__init__.py                            0      0   100%
+src/vegetrack/adaptadores/cli.py                               106      0   100%
+src/vegetrack/adaptadores/importador_csv.py                     12      0   100%
+src/vegetrack/adaptadores/mapeamento_json.py                    30      0   100%
+src/vegetrack/adaptadores/repositorios_em_arquivo.py            39      0   100%
+src/vegetrack/adaptadores/repositorios_em_memoria.py            37      0   100%
+src/vegetrack/aplicacao/__init__.py                              0      0   100%
+src/vegetrack/aplicacao/avaliar_trecho.py                       31      0   100%
+src/vegetrack/aplicacao/calcular_indice.py                       8      0   100%
+src/vegetrack/aplicacao/concluir_ordem.py                       26      0   100%
+src/vegetrack/aplicacao/consultar_fila.py                       13      0   100%
+src/vegetrack/aplicacao/erros.py                                 6      0   100%
+src/vegetrack/aplicacao/importar_levantamento.py                41      0   100%
+src/vegetrack/aplicacao/publicador_de_avaliacoes.py             11      0   100%
+src/vegetrack/aplicacao/reacoes_da_manutencao.py                27      0   100%
+src/vegetrack/aplicacao/registrar_medicao.py                    16      0   100%
+src/vegetrack/manutencao/__init__.py                             0      0   100%
+src/vegetrack/manutencao/dominio/__init__.py                     0      0   100%
+src/vegetrack/manutencao/dominio/ordem_de_servico.py            49      0   100%
+src/vegetrack/manutencao/dominio/plano_de_regularizacao.py      15      0   100%
+src/vegetrack/manutencao/dominio/politicas_de_rocada.py         39      0   100%
+src/vegetrack/manutencao/dominio/portas.py                       5      0   100%
+src/vegetrack/manutencao/dominio/prazo_legal.py                 16      1    94%   27
+src/vegetrack/manutencao/dominio/violacao_contratual.py         28      0   100%
+src/vegetrack/monitoramento/__init__.py                          0      0   100%
+src/vegetrack/monitoramento/dominio/__init__.py                  0      0   100%
+src/vegetrack/monitoramento/dominio/altura_vegetacao.py         13      0   100%
+src/vegetrack/monitoramento/dominio/avaliacao_de_risco.py       47      0   100%
+src/vegetrack/monitoramento/dominio/eventos.py                  16      0   100%
+src/vegetrack/monitoramento/dominio/indice_de_saude.py          25      0   100%
+src/vegetrack/monitoramento/dominio/marco_quilometrico.py       22      0   100%
+src/vegetrack/monitoramento/dominio/medicao.py                  12      0   100%
+src/vegetrack/monitoramento/dominio/portas.py                    3      0   100%
+src/vegetrack/monitoramento/dominio/trecho.py                   49      1    98%   88
+------------------------------------------------------------------------------------------
+TOTAL                                                          742      2    99%
+133 passed in 0.67s
