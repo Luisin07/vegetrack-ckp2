@@ -4,12 +4,19 @@ Raiz do agregado de monitoramento: o segmento da rodovia e o seu histórico de m
 Medicao só entra no sistema através de Trecho.registrar_medicao (RN-03).
 """
 
+from datetime import date
+
+from vegetrack.monitoramento.dominio.avaliacao_de_risco import AvaliacaoDeRisco
 from vegetrack.monitoramento.dominio.marco_quilometrico import MarcoQuilometrico
 from vegetrack.monitoramento.dominio.medicao import Medicao
 
 
 class TrechoInvalido(ValueError):
     """Trecho com delimitação incoerente."""
+
+
+class TrechoSemMedicao(ValueError):
+    """Trecho ainda não medido não pode ser avaliado."""
 
 
 class Trecho:
@@ -56,6 +63,14 @@ class Trecho:
         anterior, ultima = medicoes[-2], medicoes[-1]
         variacao_cm = ultima.altura.centimetros - anterior.altura.centimetros
         return variacao_cm / (ultima.data - anterior.data).days
+
+    def avaliar(self, hoje: date) -> AvaliacaoDeRisco:
+        ultima = self.ultima_medicao
+        if ultima is None:
+            raise TrechoSemMedicao(f"Trecho '{self.identificacao}' ainda não tem medição.")
+        return AvaliacaoDeRisco.classificar(
+            self.identificacao, hoje, ultima.data, ultima.altura, self.taxa_de_crescimento()
+        )
 
     def contem_km(self, km_inicial: float | None, km_final: float | None) -> bool:
         inicio_em_km = self.marco_inicial.em_metros / 1000

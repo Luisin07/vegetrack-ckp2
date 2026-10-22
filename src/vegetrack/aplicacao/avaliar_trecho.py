@@ -4,13 +4,12 @@ Caso de uso principal (US-02 a US-05): avalia o risco do trecho, emite a ordem d
 e registra a violação contratual iminente.
 """
 
-import math
 from dataclasses import dataclass
 from datetime import date, timedelta
 from pathlib import Path
 
 from vegetrack.adaptadores.armazenamento_em_arquivo import ArmazenamentoEmArquivo
-from vegetrack.aplicacao.erros import TrechoNaoEncontrado, TrechoSemMedicao
+from vegetrack.aplicacao.erros import TrechoNaoEncontrado
 from vegetrack.manutencao.dominio.ordem_de_servico import OrdemDeServico, Prioridade
 from vegetrack.manutencao.dominio.prazo_legal import (
     ORGAO_REGULADOR,
@@ -21,8 +20,6 @@ from vegetrack.manutencao.dominio.prazo_legal import (
 )
 from vegetrack.manutencao.dominio.violacao_contratual import ViolacaoContratual
 from vegetrack.monitoramento.dominio.avaliacao_de_risco import (
-    DIAS_PARA_ATENCAO,
-    DIAS_PARA_CRITICO,
     LIMITE_CONTRATUAL_CM,
     AvaliacaoDeRisco,
     NivelDeRisco,
@@ -45,32 +42,11 @@ class AvaliarTrecho:
         trecho = dados.buscar_trecho(trecho_id)
         if trecho is None:
             raise TrechoNaoEncontrado(trecho_id)
-        medicoes = trecho.medicoes
-        if not medicoes:
-            raise TrechoSemMedicao(trecho_id)
-        ultima = medicoes[-1]
+        avaliacao = trecho.avaliar(hoje)
+        ultima = trecho.ultima_medicao
         altura = ultima.altura.centimetros
-
-        taxa = trecho.taxa_de_crescimento()
-
-        dias_ate_limite = None
-        if altura >= LIMITE_CONTRATUAL_CM:
-            dias_ate_limite = 0
-        elif taxa is not None and taxa > 0:
-            dias_ate_limite = math.floor((LIMITE_CONTRATUAL_CM - altura) / taxa)
-
-        if altura >= LIMITE_CONTRATUAL_CM or (
-            dias_ate_limite is not None and dias_ate_limite <= DIAS_PARA_CRITICO
-        ):
-            nivel = NivelDeRisco.CRITICO
-        elif dias_ate_limite is not None and dias_ate_limite <= DIAS_PARA_ATENCAO:
-            nivel = NivelDeRisco.ATENCAO
-        else:
-            nivel = NivelDeRisco.CONFORME
-
-        avaliacao = AvaliacaoDeRisco(
-            trecho_id, hoje, ultima.data, ultima.altura, taxa, dias_ate_limite, nivel
-        )
+        nivel = avaliacao.nivel
+        dias_ate_limite = avaliacao.dias_ate_o_limite
 
         ordem = None
         if nivel != NivelDeRisco.CONFORME:
