@@ -159,3 +159,56 @@ estado, e pode ser substituída por parâmetro (`OrdemDeServico.emitir(..., sele
 **O que melhorou:** método novo é uma classe nova; a entidade não muda. Um teste varre de 0 a 300 cm
 para garantir que as faixas padrão não se sobrepõem nem deixam buraco. Os testes de emissão
 existentes passaram sem alteração.
+
+---
+
+## Refatoração 4 — Padrão Observer nas reações à avaliação (GoF comportamental)
+
+**Problema real:** `AvaliarTrecho` (Monitoramento) decidia prioridade, emissão de ordem e violação,
+que são regras da Manutenção (DT-04). Qualquer reação nova a uma avaliação, como avisar a
+coordenação, exigia mexer no caso de uso mais crítico do sistema.
+
+**Antes** — `aplicacao/avaliar_trecho.py`:
+
+```python
+avaliacao = trecho.avaliar(hoje)
+if avaliacao.exige_ordem_de_servico:
+    ordem = _emitir_ou_reavaliar_ordem(self._ordens, avaliacao)
+if avaliacao.violou_limite:
+    violacao = _apontar_violacao(self._violacoes, avaliacao, hoje)
+```
+
+**Depois** — o Monitoramento só anuncia o que aconteceu:
+
+```python
+avaliacao = trecho.avaliar(hoje)
+self.publicador.publicar(TrechoAvaliado.de(avaliacao))
+```
+
+| Papel no padrão | Classe no VegeTrack |
+|---|---|
+| Subject | `PublicadorDeAvaliacoes` (`aplicacao/publicador_de_avaliacoes.py`) |
+| Observer | `ObservadorDeAvaliacao` (interface `ao_avaliar`) |
+| ConcreteObserver | `EmissorDeOrdensDeServico`, `ApuradorDeViolacoes` (`aplicacao/reacoes_da_manutencao.py`), `AvisoDeViolacaoNoTerminal` (`adaptadores/cli.py`) |
+| Evento | `TrechoAvaliado` (`monitoramento/dominio/eventos.py`) |
+
+```mermaid
+classDiagram
+    class ObservadorDeAvaliacao {
+        <<interface>>
+        +ao_avaliar(evento: TrechoAvaliado)
+    }
+    AvaliarTrecho --> PublicadorDeAvaliacoes : publicar(TrechoAvaliado)
+    PublicadorDeAvaliacoes o-- "*" ObservadorDeAvaliacao
+    ObservadorDeAvaliacao <|.. EmissorDeOrdensDeServico
+    ObservadorDeAvaliacao <|.. ApuradorDeViolacoes
+    ObservadorDeAvaliacao <|.. AvisoDeViolacaoNoTerminal
+```
+
+**O que melhorou:** o evento `TrechoAvaliado` é a relação cliente-fornecedor entre os dois bounded
+contexts, agora explícita no código. A prova: o commit `feat:` seguinte acrescenta o aviso no terminal
+como terceiro observador **sem alterar uma linha de `AvaliarTrecho`**. Os testes de caracterização
+passaram sem alteração.
+
+**Limite assumido:** `AvaliarTrecho` ainda consulta os repositórios de ordens e violações para montar
+o `ResultadoDaAvaliacao` (somente leitura). Não decide mais nada da Manutenção.
