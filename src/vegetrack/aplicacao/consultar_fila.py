@@ -47,10 +47,7 @@ class ConsultarFilaDeTrechos:
         medicoes = trecho.medicoes
         ultima = medicoes[-1]
         altura = ultima.altura.centimetros
-        taxa = None
-        if len(medicoes) >= 2:
-            anterior = medicoes[-2]
-            taxa = (altura - anterior.altura.centimetros) / (ultima.data - anterior.data).days
+        taxa = trecho.taxa_de_crescimento()
         dias_ate_limite = None
         if altura >= LIMITE_CONTRATUAL_CM:
             dias_ate_limite = 0

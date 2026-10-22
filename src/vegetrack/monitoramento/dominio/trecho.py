@@ -48,6 +48,15 @@ class Trecho:
         medicoes = self.medicoes
         return medicoes[-1] if medicoes else None
 
+    def taxa_de_crescimento(self) -> float | None:
+        # RN-03: taxa só existe com duas medições em datas distintas; usa as duas mais recentes
+        medicoes = self.medicoes
+        if len(medicoes) < 2:
+            return None
+        anterior, ultima = medicoes[-2], medicoes[-1]
+        variacao_cm = ultima.altura.centimetros - anterior.altura.centimetros
+        return variacao_cm / (ultima.data - anterior.data).days
+
     def contem_km(self, km_inicial: float | None, km_final: float | None) -> bool:
         inicio_em_km = self.marco_inicial.em_metros / 1000
         if km_inicial is not None and inicio_em_km < km_inicial:

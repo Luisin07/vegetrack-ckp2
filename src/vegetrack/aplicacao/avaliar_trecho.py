@@ -51,11 +51,7 @@ class AvaliarTrecho:
         ultima = medicoes[-1]
         altura = ultima.altura.centimetros
 
-        taxa = None
-        if len(medicoes) >= 2:
-            anterior = medicoes[-2]
-            dias = (ultima.data - anterior.data).days
-            taxa = (altura - anterior.altura.centimetros) / dias
+        taxa = trecho.taxa_de_crescimento()
 
         dias_ate_limite = None
         if altura >= LIMITE_CONTRATUAL_CM:
