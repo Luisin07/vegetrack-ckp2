@@ -1,6 +1,6 @@
 # VegeTrack — monitoramento de vegetação na faixa de domínio
 
-[![CI](https://github.com/SEU-USUARIO/vegetrack-ckp2/actions/workflows/ci.yml/badge.svg)](https://github.com/SEU-USUARIO/vegetrack-ckp2/actions/workflows/ci.yml)
+[![CI](https://github.com/Luisin07/vegetrack-ckp2/actions/workflows/ci.yml/badge.svg)](https://github.com/Luisin07/vegetrack-ckp2/actions/workflows/ci.yml)
 
 Checkpoint 2 de Engenharia de Software (FIAP, Prof. Jorge Luiz Gomes) — Challenge Sprint Motiva/CCR,
 Rodoanel Mário Covas. O sistema registra a altura da vegetação por trecho, calcula a velocidade de
@@ -21,7 +21,7 @@ roçada e aponta a violação contratual iminente antes da multa.
 Requisito único: **Python 3.12 ou superior**. Não há banco, Docker nem variável de ambiente.
 
 ```bash
-git clone https://github.com/SEU-USUARIO/vegetrack-ckp2.git
+git clone https://github.com/Luisin07/vegetrack-ckp2.git
 cd vegetrack-ckp2
 python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
