@@ -56,3 +56,9 @@ name = "Dominio de manutencao nao depende de aplicacao nem de adaptadores"
 type = "forbidden"
 source_modules = ["vegetrack.manutencao"]
 forbidden_modules = ["vegetrack.aplicacao", "vegetrack.adaptadores", "vegetrack.monitoramento"]
+
+[[tool.importlinter.contracts]]
+name = "Aplicacao depende so das portas, nunca dos adaptadores"
+type = "forbidden"
+source_modules = ["vegetrack.aplicacao"]
+forbidden_modules = ["vegetrack.adaptadores"]
