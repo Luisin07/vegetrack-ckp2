@@ -6,14 +6,14 @@ e registra a violação contratual iminente.
 
 from dataclasses import dataclass
 from datetime import date
-from pathlib import Path
 
-from vegetrack.adaptadores.armazenamento_em_arquivo import ArmazenamentoEmArquivo
 from vegetrack.aplicacao.erros import TrechoNaoEncontrado
 from vegetrack.manutencao.dominio.ordem_de_servico import OrdemDeServico
 from vegetrack.manutencao.dominio.plano_de_regularizacao import PlanoDeRegularizacao
+from vegetrack.manutencao.dominio.portas import RepositorioDeOrdens, RepositorioDeViolacoes
 from vegetrack.manutencao.dominio.violacao_contratual import ViolacaoContratual
 from vegetrack.monitoramento.dominio.avaliacao_de_risco import AvaliacaoDeRisco, NivelDeRisco
+from vegetrack.monitoramento.dominio.portas import RepositorioDeTrechos
 
 
 @dataclass(frozen=True)
@@ -24,13 +24,19 @@ class ResultadoDaAvaliacao:
 
 
 class AvaliarTrecho:
-    def __init__(self, caminho_dos_dados: Path) -> None:
-        self._caminho_dos_dados = caminho_dos_dados
+    def __init__(
+        self,
+        trechos: RepositorioDeTrechos,
+        ordens: RepositorioDeOrdens,
+        violacoes: RepositorioDeViolacoes,
+    ) -> None:
+        self._trechos = trechos
+        self._ordens = ordens
+        self._violacoes = violacoes
 
     def executar(self, trecho_id: str, hoje: date) -> ResultadoDaAvaliacao:
         # ===== BLOCO 1: avaliar_no_dominio =====
-        dados = ArmazenamentoEmArquivo(self._caminho_dos_dados)
-        trecho = dados.buscar_trecho(trecho_id)
+        trecho = self._trechos.buscar(trecho_id)
         if trecho is None:
             raise TrechoNaoEncontrado(trecho_id)
         avaliacao = trecho.avaliar(hoje)
@@ -38,17 +44,15 @@ class AvaliarTrecho:
         # ===== BLOCO 2: reacoes_da_manutencao =====
         ordem = None
         if avaliacao.exige_ordem_de_servico:
-            ordem = _emitir_ou_reavaliar_ordem(dados, avaliacao)
+            ordem = _emitir_ou_reavaliar_ordem(self._ordens, avaliacao)
         violacao = None
         if avaliacao.violou_limite:
-            violacao = _apontar_violacao(dados, avaliacao, hoje)
-
-        dados.persistir()
+            violacao = _apontar_violacao(self._violacoes, avaliacao, hoje)
         return ResultadoDaAvaliacao(avaliacao, ordem, violacao)
 
 
 def _emitir_ou_reavaliar_ordem(
-    dados: ArmazenamentoEmArquivo, avaliacao: AvaliacaoDeRisco
+    ordens: RepositorioDeOrdens, avaliacao: AvaliacaoDeRisco
 ) -> OrdemDeServico:
     altura_cm = avaliacao.altura.centimetros
     plano = PlanoDeRegularizacao.para(
@@ -57,27 +61,27 @@ def _emitir_ou_reavaliar_ordem(
         avaliacao.dias_ate_o_limite,
         critico=avaliacao.nivel is NivelDeRisco.CRITICO,
     )
-    ordem = dados.ordem_aberta_do_trecho(avaliacao.trecho_id)
+    ordem = ordens.aberta_do_trecho(avaliacao.trecho_id)
     # RN-06: trecho com ordem aberta tem a ordem reavaliada, nunca uma segunda ordem
     if ordem is None:
-        numero = dados.proximo_numero_de_ordem()
+        numero = ordens.proximo_numero()
         ordem = OrdemDeServico.emitir(
             numero, avaliacao.trecho_id, altura_cm, plano.prioridade, plano.prazo
         )
     else:
         ordem.reavaliar(plano.prioridade, plano.prazo)
-    dados.salvar_ordem(ordem)
+    ordens.salvar(ordem)
     return ordem
 
 
 def _apontar_violacao(
-    dados: ArmazenamentoEmArquivo, avaliacao: AvaliacaoDeRisco, hoje: date
+    violacoes: RepositorioDeViolacoes, avaliacao: AvaliacaoDeRisco, hoje: date
 ) -> ViolacaoContratual:
-    violacao = dados.violacao_ativa_do_trecho(avaliacao.trecho_id)
+    violacao = violacoes.ativa_do_trecho(avaliacao.trecho_id)
     if violacao is None:
         violacao = ViolacaoContratual.apontar(
             avaliacao.trecho_id, avaliacao.altura.centimetros, avaliacao.data_da_medicao
         )
     violacao.apurar(hoje)
-    dados.salvar_violacao(violacao)
+    violacoes.salvar(violacao)
     return violacao

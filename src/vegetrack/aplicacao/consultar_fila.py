@@ -4,15 +4,14 @@ Caso de uso US-06 (RF-09): trechos ordenados do mais crítico ao menos crítico,
 """
 
 from datetime import date
-from pathlib import Path
 
-from vegetrack.adaptadores.armazenamento_em_arquivo import ArmazenamentoEmArquivo
 from vegetrack.monitoramento.dominio.avaliacao_de_risco import AvaliacaoDeRisco
+from vegetrack.monitoramento.dominio.portas import RepositorioDeTrechos
 
 
 class ConsultarFilaDeTrechos:
-    def __init__(self, caminho_dos_dados: Path) -> None:
-        self._caminho_dos_dados = caminho_dos_dados
+    def __init__(self, trechos: RepositorioDeTrechos) -> None:
+        self._trechos = trechos
 
     def executar(
         self,
@@ -22,10 +21,9 @@ class ConsultarFilaDeTrechos:
         sentido: str | None = None,
     ) -> list[AvaliacaoDeRisco]:
         # ===== BLOCO 1: filtrar_trechos =====
-        dados = ArmazenamentoEmArquivo(self._caminho_dos_dados)
         trechos = [
             t
-            for t in dados.trechos.values()
+            for t in self._trechos.listar()
             if t.medicoes
             and t.contem_km(km_inicial, km_final)
             and (sentido is None or t.sentido.lower() == sentido.lower())

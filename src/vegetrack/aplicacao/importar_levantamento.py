@@ -6,12 +6,11 @@ A leitura do arquivo CSV fica no adaptador importador_csv.py.
 
 from dataclasses import dataclass, field
 from datetime import date
-from pathlib import Path
 
-from vegetrack.adaptadores.armazenamento_em_arquivo import ArmazenamentoEmArquivo
 from vegetrack.monitoramento.dominio.altura_vegetacao import AlturaVegetacao
 from vegetrack.monitoramento.dominio.marco_quilometrico import MarcoQuilometrico
 from vegetrack.monitoramento.dominio.medicao import Medicao
+from vegetrack.monitoramento.dominio.portas import RepositorioDeTrechos
 from vegetrack.monitoramento.dominio.trecho import Trecho
 
 
@@ -34,27 +33,23 @@ class ResultadoDaImportacao:
 
 
 class ImportarLevantamento:
-    def __init__(self, caminho_dos_dados: Path) -> None:
-        self._caminho_dos_dados = caminho_dos_dados
+    def __init__(self, trechos: RepositorioDeTrechos) -> None:
+        self._trechos = trechos
 
     def executar(self, linhas: list[LinhaDeLevantamento]) -> ResultadoDaImportacao:
-        dados = ArmazenamentoEmArquivo(self._caminho_dos_dados)
         resultado = ResultadoDaImportacao()
 
         # ===== BLOCO 1: importar_linha_a_linha =====
         for linha in linhas:
             # linha inválida é rejeitada com motivo, sem abortar o lote (RF-02)
             try:
-                trecho = dados.buscar_trecho(linha.trecho) or _novo_trecho(linha)
+                trecho = self._trechos.buscar(linha.trecho) or _novo_trecho(linha)
                 trecho.registrar_medicao(_medicao(linha))
             except ValueError as erro:
                 resultado.rejeitadas.append(f"linha {linha.numero}: {erro}")
                 continue
-            dados.salvar_trecho(trecho)
+            self._trechos.salvar(trecho)
             resultado.importadas += 1
-
-        # ===== BLOCO 2: persistir_lote =====
-        dados.persistir()
         return resultado
 
 
