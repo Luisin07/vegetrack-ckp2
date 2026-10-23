@@ -212,3 +212,6 @@ passaram sem alteração.
 
 **Limite assumido:** `AvaliarTrecho` ainda consulta os repositórios de ordens e violações para montar
 o `ResultadoDaAvaliacao` (somente leitura). Não decide mais nada da Manutenção.
+
+
+**Ordem dos observadores:** reagem na ordem de inscrição; nenhum depende do resultado do outro, então a ordem não altera o resultado.
