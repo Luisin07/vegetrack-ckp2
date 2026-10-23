@@ -38,3 +38,5 @@ como estava, as duas mudanças exigiriam reescrever as regras de negócio.
 - ➕ A fronteira entre contextos é medida a cada pull request, não só desenhada.
 - ➖ Mais arquivos e uma indireção a mais para quem chega ao projeto.
 - ➖ O limite de 30 cm aparece nos dois contextos (DT-07), preço de não acoplar um ao outro.
+
+- ➕ A regra contratual de risco existe uma única vez, em AvaliacaoDeRisco.classificar (refatoração 1, DT-01).

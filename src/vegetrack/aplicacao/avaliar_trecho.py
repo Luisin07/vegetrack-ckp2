@@ -4,15 +4,14 @@ Caso de uso principal (US-02 a US-05): avalia o risco do trecho, emite a ordem d
 e registra a violação contratual iminente.
 """
 
-import math
 from dataclasses import dataclass
-from datetime import date, timedelta
+from datetime import date
 from pathlib import Path
 
 from vegetrack.adaptadores.armazenamento_em_arquivo import ArmazenamentoEmArquivo
-from vegetrack.aplicacao.erros import TrechoNaoEncontrado, TrechoSemMedicao
-from vegetrack.manutencao.dominio.ordem_de_servico import OrdemDeServico, Prioridade
-from vegetrack.manutencao.dominio.prazo_legal import PrazoLegal
+from vegetrack.aplicacao.erros import TrechoNaoEncontrado
+from vegetrack.manutencao.dominio.ordem_de_servico import OrdemDeServico
+from vegetrack.manutencao.dominio.plano_de_regularizacao import PlanoDeRegularizacao
 from vegetrack.manutencao.dominio.violacao_contratual import ViolacaoContratual
 from vegetrack.monitoramento.dominio.avaliacao_de_risco import AvaliacaoDeRisco, NivelDeRisco
 
@@ -28,71 +27,57 @@ class AvaliarTrecho:
     def __init__(self, caminho_dos_dados: Path) -> None:
         self._caminho_dos_dados = caminho_dos_dados
 
-    def executar(self, trecho_id: str, hoje: date) -> ResultadoDaAvaliacao:  # noqa: C901
+    def executar(self, trecho_id: str, hoje: date) -> ResultadoDaAvaliacao:
+        # ===== BLOCO 1: avaliar_no_dominio =====
         dados = ArmazenamentoEmArquivo(self._caminho_dos_dados)
         trecho = dados.buscar_trecho(trecho_id)
         if trecho is None:
             raise TrechoNaoEncontrado(trecho_id)
-        medicoes = trecho.medicoes
-        if not medicoes:
-            raise TrechoSemMedicao(trecho_id)
-        ultima = medicoes[-1]
-        altura = ultima.altura.centimetros
+        avaliacao = trecho.avaliar(hoje)
 
-        taxa = None
-        if len(medicoes) >= 2:
-            anterior = medicoes[-2]
-            dias = (ultima.data - anterior.data).days
-            taxa = (altura - anterior.altura.centimetros) / dias
-
-        dias_ate_limite = None
-        if altura >= 30:
-            dias_ate_limite = 0
-        elif taxa is not None and taxa > 0:
-            dias_ate_limite = math.floor((30 - altura) / taxa)
-
-        if altura >= 30 or (dias_ate_limite is not None and dias_ate_limite <= 2):
-            nivel = NivelDeRisco.CRITICO
-        elif dias_ate_limite is not None and dias_ate_limite <= 7:
-            nivel = NivelDeRisco.ATENCAO
-        else:
-            nivel = NivelDeRisco.CONFORME
-
-        avaliacao = AvaliacaoDeRisco(
-            trecho_id, hoje, ultima.data, ultima.altura, taxa, dias_ate_limite, nivel
-        )
-
+        # ===== BLOCO 2: reacoes_da_manutencao =====
         ordem = None
-        if nivel != NivelDeRisco.CONFORME:
-            if altura >= 30:
-                prioridade = Prioridade.URGENTE
-                prazo = PrazoLegal(ultima.data + timedelta(days=2), "Contrato ARTESP — 48 h")
-            else:
-                prioridade = Prioridade.ALTA if nivel == NivelDeRisco.CRITICO else Prioridade.NORMAL
-                prazo = PrazoLegal(
-                    ultima.data + timedelta(days=dias_ate_limite), "Projeção de crescimento"
-                )
-            ordem = dados.ordem_aberta_do_trecho(trecho_id)
-            if ordem is None:
-                ordem = OrdemDeServico.emitir(
-                    dados.proximo_numero_de_ordem(), trecho_id, altura, prioridade, prazo
-                )
-            else:
-                ordem.reavaliar(prioridade, prazo)
-            dados.salvar_ordem(ordem)
-
+        if avaliacao.exige_ordem_de_servico:
+            ordem = _emitir_ou_reavaliar_ordem(dados, avaliacao)
         violacao = None
-        if altura >= 30:
-            violacao = dados.violacao_ativa_do_trecho(trecho_id)
-            if violacao is None:
-                violacao = ViolacaoContratual(
-                    trecho_id,
-                    "ARTESP",
-                    altura,
-                    PrazoLegal(ultima.data + timedelta(days=2), "Contrato ARTESP — 48 h"),
-                )
-            violacao.apurar(hoje)
-            dados.salvar_violacao(violacao)
+        if avaliacao.violou_limite:
+            violacao = _apontar_violacao(dados, avaliacao, hoje)
 
         dados.persistir()
         return ResultadoDaAvaliacao(avaliacao, ordem, violacao)
+
+
+def _emitir_ou_reavaliar_ordem(
+    dados: ArmazenamentoEmArquivo, avaliacao: AvaliacaoDeRisco
+) -> OrdemDeServico:
+    altura_cm = avaliacao.altura.centimetros
+    plano = PlanoDeRegularizacao.para(
+        altura_cm,
+        avaliacao.data_da_medicao,
+        avaliacao.dias_ate_o_limite,
+        critico=avaliacao.nivel is NivelDeRisco.CRITICO,
+    )
+    ordem = dados.ordem_aberta_do_trecho(avaliacao.trecho_id)
+    # RN-06: trecho com ordem aberta tem a ordem reavaliada, nunca uma segunda ordem
+    if ordem is None:
+        numero = dados.proximo_numero_de_ordem()
+        ordem = OrdemDeServico.emitir(
+            numero, avaliacao.trecho_id, altura_cm, plano.prioridade, plano.prazo
+        )
+    else:
+        ordem.reavaliar(plano.prioridade, plano.prazo)
+    dados.salvar_ordem(ordem)
+    return ordem
+
+
+def _apontar_violacao(
+    dados: ArmazenamentoEmArquivo, avaliacao: AvaliacaoDeRisco, hoje: date
+) -> ViolacaoContratual:
+    violacao = dados.violacao_ativa_do_trecho(avaliacao.trecho_id)
+    if violacao is None:
+        violacao = ViolacaoContratual.apontar(
+            avaliacao.trecho_id, avaliacao.altura.centimetros, avaliacao.data_da_medicao
+        )
+    violacao.apurar(hoje)
+    dados.salvar_violacao(violacao)
+    return violacao
