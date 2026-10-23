@@ -109,6 +109,7 @@ src/vegetrack/
 ├── aplicacao/               # casos de uso: registrar, importar, avaliar, fila, índice, concluir
 └── adaptadores/             # entrada (CLI, CSV) e saída (repositórios em memória e em arquivo JSON)
 ```
+Para cadastrar um novo método de roçada, crie uma classe que implemente PoliticaDeRocada em manutencao/dominio/politicas_de_rocada.py e inclua-a no SELETOR_PADRAO; a OrdemDeServico não precisa mudar.
 
 ## 5. Documentação do projeto
 

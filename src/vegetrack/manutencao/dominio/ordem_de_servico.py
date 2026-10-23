@@ -7,6 +7,10 @@ Regras: RN-04 (só conclui com medição abaixo do limite) e RN-06 (uma ordem ab
 from dataclasses import dataclass, field
 from enum import Enum, IntEnum
 
+from vegetrack.manutencao.dominio.politicas_de_rocada import (
+    SELETOR_PADRAO,
+    SeletorDePoliticaDeRocada,
+)
 from vegetrack.manutencao.dominio.prazo_legal import PrazoLegal
 
 LIMITE_CONTRATUAL_CM = 30.0
@@ -49,21 +53,19 @@ class OrdemDeServico:
         altura_cm: float,
         prioridade: Prioridade,
         prazo: PrazoLegal,
+        seletor: SeletorDePoliticaDeRocada = SELETOR_PADRAO,
     ) -> "OrdemDeServico":
-        epi_basico = ("capacete", "protetor auricular", "óculos de proteção", "perneira", "luvas")
-        if altura_cm <= 50:
-            metodo = "Roçada manual com roçadeira costal"
-            equipes = 1
-            epi = epi_basico
-        elif altura_cm <= 100:
-            metodo = "Roçada mecanizada com trator e roçadeira acoplada"
-            equipes = 2
-            epi = epi_basico + ("colete refletivo",)
-        else:
-            metodo = "Roçada mecanizada pesada com trator e apoio manual"
-            equipes = 3
-            epi = epi_basico + ("colete refletivo", "máscara contra poeira")
-        return cls(numero, trecho_id, altura_cm, prioridade, prazo, metodo, equipes, epi)
+        plano = seletor.planejar(altura_cm)
+        return cls(
+            numero,
+            trecho_id,
+            altura_cm,
+            prioridade,
+            prazo,
+            plano.metodo,
+            plano.equipes_necessarias,
+            plano.epi_obrigatorio,
+        )
 
     @property
     def em_aberto(self) -> bool:
