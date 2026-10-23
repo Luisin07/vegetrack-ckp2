@@ -10,6 +10,11 @@ from datetime import date
 from pathlib import Path
 
 from vegetrack.adaptadores.importador_csv import ler_levantamento_csv
+from vegetrack.adaptadores.repositorios_em_arquivo import (
+    RepositorioDeOrdensEmArquivo,
+    RepositorioDeTrechosEmArquivo,
+    RepositorioDeViolacoesEmArquivo,
+)
 from vegetrack.aplicacao.avaliar_trecho import AvaliarTrecho, ResultadoDaAvaliacao
 from vegetrack.aplicacao.calcular_indice import CalcularIndiceDeSaude
 from vegetrack.aplicacao.concluir_ordem import ConcluirOrdemDeServico
@@ -18,20 +23,24 @@ from vegetrack.aplicacao.importar_levantamento import ImportarLevantamento
 from vegetrack.aplicacao.registrar_medicao import RegistrarMedicao
 from vegetrack.monitoramento.dominio.avaliacao_de_risco import AvaliacaoDeRisco
 
-DADOS_PADRAO = Path(".vegetrack/dados.json")
+DADOS_PADRAO = Path(".vegetrack")
 AMOSTRA = Path(__file__).resolve().parents[3] / "dados" / "levantamento_rodoanel_amostra.csv"
 DATA_DA_AMOSTRA = date(2026, 9, 9)
 
 
 # ===== BLOCO 1: composicao_dos_casos_de_uso =====
 class Aplicacao:
-    def __init__(self, caminho_dos_dados: Path) -> None:
-        self.importar = ImportarLevantamento(caminho_dos_dados)
-        self.registrar = RegistrarMedicao(caminho_dos_dados)
-        self.avaliar = AvaliarTrecho(caminho_dos_dados)
-        self.fila = ConsultarFilaDeTrechos(caminho_dos_dados)
+    # raiz de composição: único lugar que escolhe quais adaptadores cumprem as portas
+    def __init__(self, pasta_dos_dados: Path) -> None:
+        trechos = RepositorioDeTrechosEmArquivo(pasta_dos_dados)
+        ordens = RepositorioDeOrdensEmArquivo(pasta_dos_dados)
+        violacoes = RepositorioDeViolacoesEmArquivo(pasta_dos_dados)
+        self.importar = ImportarLevantamento(trechos)
+        self.registrar = RegistrarMedicao(trechos)
+        self.avaliar = AvaliarTrecho(trechos, ordens, violacoes)
+        self.fila = ConsultarFilaDeTrechos(trechos)
         self.indice = CalcularIndiceDeSaude(self.fila)
-        self.concluir = ConcluirOrdemDeServico(caminho_dos_dados)
+        self.concluir = ConcluirOrdemDeServico(trechos, ordens, violacoes)
 
 
 # ===== BLOCO 2: comandos =====
@@ -74,7 +83,7 @@ def _concluir(app: Aplicacao, args: argparse.Namespace) -> None:
 def _demo(_: Aplicacao, args: argparse.Namespace) -> None:
     # demo usa base temporária para rodar igual em qualquer máquina, sem sujar .vegetrack/
     with tempfile.TemporaryDirectory() as pasta:
-        app = Aplicacao(Path(pasta) / "dados.json")
+        app = Aplicacao(Path(pasta))
         args.arquivo, args.hoje = AMOSTRA, DATA_DA_AMOSTRA
         args.km_inicial = args.km_final = args.sentido = None
         for titulo, comando in [
@@ -108,7 +117,7 @@ def _imprimir_resultado(resultado: ResultadoDaAvaliacao) -> None:
 # ===== BLOCO 4: argumentos =====
 def construir_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="vegetrack", description="VegeTrack — CLI")
-    parser.add_argument("--dados", type=Path, default=DADOS_PADRAO, help="arquivo JSON da base")
+    parser.add_argument("--dados", type=Path, default=DADOS_PADRAO, help="pasta da base JSON")
     sub = parser.add_subparsers(dest="comando", required=True)
 
     sub.add_parser("demo", help="roda o fluxo completo com o levantamento de amostra")

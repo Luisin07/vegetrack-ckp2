@@ -78,10 +78,11 @@ def test_concluir_ordem_regulariza_violacao_e_melhora_o_indice(sistema):
 def test_violacao_regularizada_nao_se_configura_mesmo_apos_o_prazo(sistema):
     sistema.cadastrar("RD-001", ("2026-09-09", 34))
     resultado = sistema.avaliar.executar("RD-001", HOJE)
+    situacao_ao_avaliar = resultado.violacao.situacao
 
     sistema.concluir.executar(resultado.ordem.numero, date(2026, 9, 10), 5.0, "Marcos")
 
-    assert resultado.violacao.situacao is SituacaoDaViolacao.IMINENTE
+    assert situacao_ao_avaliar is SituacaoDaViolacao.IMINENTE
     assert sistema.avaliar.executar("RD-001", date(2026, 9, 12)).violacao is None
 
 

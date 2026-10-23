@@ -9,8 +9,8 @@ continua aqui com o status e o pull request que a pagou.
 | ID | Dívida | Prioridade | Status |
 |----|--------|-----------|--------|
 | DT-01 | Regra de avaliação de risco duplicada e fora do domínio | 🔴 Alta | ✅ Paga — refatoração 1 |
-| DT-02 | Casos de uso instanciam o armazenamento em arquivo por dentro | 🔴 Alta | A pagar — refatoração 2 |
-| DT-03 | Cadeia de `if` decide método de roçada, equipes e EPI | 🟠 Média | A pagar — refatoração 3 |
+| DT-02 | Casos de uso instanciam o armazenamento em arquivo por dentro | 🔴 Alta | ✅ Paga — refatoração 2 |
+| DT-03 | Cadeia de `if` decide método de roçada, equipes e EPI | 🟠 Média | ✅ Paga — refatoração 3 |
 | DT-04 | `AvaliarTrecho` conhece os detalhes do contexto de Manutenção | 🟠 Média | A pagar — refatoração 4 |
 | DT-05 | Persistência em um único arquivo JSON reescrito a cada operação | 🔴 Alta | Aberta |
 | DT-06 | Órgão regulador e prazo de 48 h fixos no código | 🟠 Média | Aberta |
@@ -45,9 +45,9 @@ continua aqui com o status e o pull request que a pagou.
 - **Custo de conviver:** toda reação nova a uma avaliação mexe no arquivo mais crítico do sistema.
 
 ### DT-05 — Persistência em um único arquivo JSON reescrito a cada operação
-- **Onde:** adaptador de persistência em arquivo
+- **Onde:** `adaptadores/repositorios_em_arquivo.py` (um JSON por repositório, regravado a cada `salvar`)
 - **Por que foi assumido:** o enunciado do CKP2 aceita persistência em arquivo; banco real, transação e migração são escopo do Checkpoint 3.
-- **Impacto:** dois técnicos registrando ao mesmo tempo podem sobrescrever a medição um do outro (última escrita vence); o arquivo cresce sem limite e é relido inteiro em cada operação.
+- **Impacto:** dois técnicos registrando ao mesmo tempo podem sobrescrever a medição um do outro (última escrita vence); o arquivo é regravado inteiro a cada `salvar`, então importar 248 trechos regrava o arquivo 248 vezes.
 - **Custo de conviver:** inaceitável em produção; aceitável enquanto o sistema roda numa só máquina.
 - **Plano:** adaptador de banco relacional atrás das mesmas portas, no Checkpoint 3.
 
@@ -70,7 +70,7 @@ continua aqui com o status e o pull request que a pagou.
 - **Custo de conviver:** ~2 min por levantamento.
 
 ### DT-09 — Número da ordem calculado pela quantidade de ordens
-- **Onde:** `proximo_numero` no adaptador de persistência
+- **Onde:** `proximo_numero` em `adaptadores/repositorios_em_memoria.py` (herdado pelo adaptador em arquivo)
 - **Por que foi assumido:** ordens nunca são excluídas no MVP.
 - **Impacto:** se exclusão de ordem for criada, números passam a se repetir.
 - **Custo de conviver:** nenhum enquanto não houver exclusão.

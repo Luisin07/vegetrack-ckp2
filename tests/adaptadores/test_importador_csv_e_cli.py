@@ -38,7 +38,7 @@ def test_demo_executa_o_fluxo_principal_de_ponta_a_ponta(capsys):
 
 
 def test_cli_registra_avalia_e_conclui_usando_a_base_em_arquivo(tmp_path, capsys):
-    dados = ["--dados", str(tmp_path / "base.json")]
+    dados = ["--dados", str(tmp_path / "base")]
     arquivo = tmp_path / "levantamento.csv"
     arquivo.write_text(CABECALHO + "RD-001;1+000;1+500;Norte;2026-09-09;34;Ana\n", "utf-8")
 
@@ -55,7 +55,7 @@ def test_cli_registra_avalia_e_conclui_usando_a_base_em_arquivo(tmp_path, capsys
 
 
 def test_cli_mostra_erro_de_negocio_sem_stack_trace(tmp_path, capsys):
-    codigo = main(["--dados", str(tmp_path / "base.json"), "registrar", "RD-404", "10"])
+    codigo = main(["--dados", str(tmp_path / "base"), "registrar", "RD-404", "10"])
 
     assert codigo == 1
     assert "Erro: Trecho 'RD-404' não existe" in capsys.readouterr().out

@@ -51,3 +51,111 @@ editar uma constante e a fila e a ordem nunca mais divergem. A função principa
 
 **Commits:** constantes → taxa em `Trecho` → classificação em `Trecho.avaliar` → prioridade/prazo em
 `PlanoDeRegularizacao`.
+
+---
+
+## Refatoração 2 — Portas e adaptadores (componente redesenhado)
+
+**Code smell:** acoplamento excessivo — a camada de aplicação dependia de um adaptador concreto.
+Os 5 casos de uso faziam `ArmazenamentoEmArquivo(self._caminho_dos_dados)` dentro de `executar`, e
+os testes de caso de uso gravavam em disco.
+
+**Antes** — `aplicacao/avaliar_trecho.py`:
+
+```python
+class AvaliarTrecho:
+    def __init__(self, caminho_dos_dados: Path) -> None:
+        self._caminho_dos_dados = caminho_dos_dados
+
+    def executar(self, trecho_id: str, hoje: date) -> ResultadoDaAvaliacao:
+        dados = ArmazenamentoEmArquivo(self._caminho_dos_dados)  # adaptador criado por dentro
+        trecho = dados.buscar_trecho(trecho_id)
+```
+
+**Depois** — o caso de uso recebe as portas; quem escolhe o adaptador é a raiz de composição (CLI):
+
+```python
+class AvaliarTrecho:
+    def __init__(
+        self,
+        trechos: RepositorioDeTrechos,  # porta declarada em monitoramento/dominio/portas.py
+        ordens: RepositorioDeOrdens,  # portas declaradas em manutencao/dominio/portas.py
+        violacoes: RepositorioDeViolacoes,
+    ) -> None: ...
+```
+
+| Porta (domínio) | Adaptador em memória | Adaptador em arquivo |
+|---|---|---|
+| `RepositorioDeTrechos` | `RepositorioDeTrechosEmMemoria` | `RepositorioDeTrechosEmArquivo` |
+| `RepositorioDeOrdens` | `RepositorioDeOrdensEmMemoria` | `RepositorioDeOrdensEmArquivo` |
+| `RepositorioDeViolacoes` | `RepositorioDeViolacoesEmMemoria` | `RepositorioDeViolacoesEmArquivo` |
+
+**O que melhorou:** trocar o arquivo por banco no Checkpoint 3 é escrever um adaptador novo; nenhum
+caso de uso muda. Os testes dos casos de uso rodam com o adaptador em memória, sem disco, e os testes
+de contrato (`tests/contratos/`) provam que os dois adaptadores se comportam igual. Medido pelo
+`import-linter`: antes, o contrato "aplicação não importa adaptadores" **quebrava em 5 imports**;
+depois, **3 contratos mantidos, 0 quebrados**, verificados a cada pull request.
+
+**Nota honesta:** um teste de caracterização dependia de o armazenamento em arquivo devolver cópias
+dos objetos. Ele foi corrigido num commit `test:` próprio, **antes** da refatoração, sem mudar a regra
+que verifica; a partir daí a mesma suíte passou antes e depois de cada commit `refactor:`.
+
+---
+
+## Refatoração 3 — Padrão Strategy na política de roçada (GoF comportamental)
+
+**Problema real:** `OrdemDeServico.emitir` decidia método de roçada, número de equipes e EPI por uma
+cadeia de `if/elif` sobre a altura. Cada método novo que a Motiva adotar (roçada em talude, química,
+de canteiro central) exigiria abrir a entidade mais importante da Manutenção (DT-03).
+
+**Antes** — `manutencao/dominio/ordem_de_servico.py`:
+
+```python
+if altura_cm <= 50:
+    metodo = "Roçada manual com roçadeira costal"
+    equipes = 1
+    epi = epi_basico
+elif altura_cm <= 100:
+    metodo = "Roçada mecanizada com trator e roçadeira acoplada"
+    ...
+else:
+    metodo = "Roçada mecanizada pesada com trator e apoio manual"
+    ...
+```
+
+**Depois** — `manutencao/dominio/politicas_de_rocada.py` e a entidade só pede o plano:
+
+```python
+plano = seletor.planejar(altura_cm)  # dentro de OrdemDeServico.emitir
+```
+
+| Papel no padrão | Classe no VegeTrack |
+|---|---|
+| Strategy | `PoliticaDeRocada` (interface: `aplica_se_a`, `planejar`) |
+| ConcreteStrategy | `RocadaManual`, `RocadaMecanizada`, `RocadaMecanizadaPesada` |
+| Context | `SeletorDePoliticaDeRocada` (usado por `OrdemDeServico.emitir`) |
+| Produto da estratégia | `PlanoDeRocada` (value object: método, equipes, EPI) |
+
+```mermaid
+classDiagram
+    class PoliticaDeRocada {
+        <<interface>>
+        +aplica_se_a(altura_cm) bool
+        +planejar(altura_cm) PlanoDeRocada
+    }
+    PoliticaDeRocada <|.. RocadaManual
+    PoliticaDeRocada <|.. RocadaMecanizada
+    PoliticaDeRocada <|.. RocadaMecanizadaPesada
+    SeletorDePoliticaDeRocada o-- "1..*" PoliticaDeRocada
+    OrdemDeServico ..> SeletorDePoliticaDeRocada : emitir()
+    PoliticaDeRocada ..> PlanoDeRocada : cria
+```
+
+**Por que não é abuso:** havia três variações reais com regra e EPI diferentes, e o backlog já prevê
+mais. `SELETOR_PADRAO` é uma instância compartilhada, mas **não é Singleton**: é imutável, sem
+estado, e pode ser substituída por parâmetro (`OrdemDeServico.emitir(..., seletor=...)`), como o teste
+`test_politica_nova_entra_sem_alterar_a_ordem_de_servico` faz.
+
+**O que melhorou:** método novo é uma classe nova; a entidade não muda. Um teste varre de 0 a 300 cm
+para garantir que as faixas padrão não se sobrepõem nem deixam buraco. Os testes de emissão
+existentes passaram sem alteração.

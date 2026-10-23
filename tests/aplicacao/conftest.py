@@ -7,6 +7,11 @@ from dataclasses import dataclass
 
 import pytest
 
+from vegetrack.adaptadores.repositorios_em_memoria import (
+    RepositorioDeOrdensEmMemoria,
+    RepositorioDeTrechosEmMemoria,
+    RepositorioDeViolacoesEmMemoria,
+)
 from vegetrack.aplicacao.avaliar_trecho import AvaliarTrecho
 from vegetrack.aplicacao.calcular_indice import CalcularIndiceDeSaude
 from vegetrack.aplicacao.concluir_ordem import ConcluirOrdemDeServico
@@ -43,14 +48,17 @@ class Sistema:
 
 
 @pytest.fixture
-def sistema(tmp_path) -> Sistema:
-    caminho = tmp_path / "dados.json"
-    fila = ConsultarFilaDeTrechos(caminho)
+def sistema() -> Sistema:
+    # adaptadores falsos em memória: casos de uso testados sem disco, banco nem servidor
+    trechos = RepositorioDeTrechosEmMemoria()
+    ordens = RepositorioDeOrdensEmMemoria()
+    violacoes = RepositorioDeViolacoesEmMemoria()
+    fila = ConsultarFilaDeTrechos(trechos)
     return Sistema(
-        importar=ImportarLevantamento(caminho),
-        registrar=RegistrarMedicao(caminho),
-        avaliar=AvaliarTrecho(caminho),
+        importar=ImportarLevantamento(trechos),
+        registrar=RegistrarMedicao(trechos),
+        avaliar=AvaliarTrecho(trechos, ordens, violacoes),
         fila=fila,
         indice=CalcularIndiceDeSaude(fila),
-        concluir=ConcluirOrdemDeServico(caminho),
+        concluir=ConcluirOrdemDeServico(trechos, ordens, violacoes),
     )

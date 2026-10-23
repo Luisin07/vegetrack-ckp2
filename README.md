@@ -34,7 +34,7 @@ Fluxo principal completo com o levantamento de amostra (importação → avalia�
 python -m vegetrack demo
 ```
 
-Uso passo a passo (a base fica em `.vegetrack/dados.json`, ignorada pelo git):
+Uso passo a passo (a base fica na pasta `.vegetrack/`, ignorada pelo git; troque com `--dados`):
 
 ```bash
 python -m vegetrack importar dados/levantamento_rodoanel_amostra.csv
@@ -63,7 +63,7 @@ pytest --cov --cov-report=term-missing  # com cobertura
 ruff check .            # linter
 ruff format .           # formatador (aplica)
 ruff format --check .   # formatador (só confere, como no CI)
-lint-imports            # fronteiras: domínio não importa aplicação, adaptadores nem o outro contexto
+lint-imports            # fronteiras: domínio e aplicação não importam adaptadores; contextos não se importam
 ```
 
 Configuração versionada em `pyproject.toml` (ruff: E, F, I, N, B, UP, SIM e complexidade máxima 8;
@@ -103,10 +103,13 @@ Hexagonal (portas e adaptadores) com dois bounded contexts — decisão em
 ```
 src/vegetrack/
 ├── monitoramento/dominio/   # Trecho (raiz), Medicao, AlturaVegetacao, AvaliacaoDeRisco, IndiceDeSaude
-├── manutencao/dominio/      # OrdemDeServico (raiz), PrazoLegal, ViolacaoContratual
+│   └── portas.py            #   porta RepositorioDeTrechos
+├── manutencao/dominio/      # OrdemDeServico (raiz), PlanoDeRegularizacao, PrazoLegal, ViolacaoContratual
+│   └── portas.py            #   portas RepositorioDeOrdens e RepositorioDeViolacoes
 ├── aplicacao/               # casos de uso: registrar, importar, avaliar, fila, índice, concluir
-└── adaptadores/             # entrada (CLI, CSV) e saída (persistência)
+└── adaptadores/             # entrada (CLI, CSV) e saída (repositórios em memória e em arquivo JSON)
 ```
+Para cadastrar um novo método de roçada, crie uma classe que implemente PoliticaDeRocada em manutencao/dominio/politicas_de_rocada.py e inclua-a no SELETOR_PADRAO; a OrdemDeServico não precisa mudar.
 
 ## 5. Documentação do projeto
 
