@@ -53,6 +53,8 @@ Essas diferenças são a razão de existir a fronteira: se os dois contextos div
 em linguagem própria, `TrechoAvaliado`. A tradução fica na camada de aplicação — o domínio de um
 contexto nunca importa o do outro.
 
+No sentido contrário, ConcluirOrdemDeServico registra no Trecho a medição de comprovação feita após a roçada; é ela que tira o trecho da condição de crítico (RN-04).
+
 ## Relação com o modelo do Checkpoint 1
 
 | Classe do CP1 (Figura 2) | Contexto | Arquivo |
