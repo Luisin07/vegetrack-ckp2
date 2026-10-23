@@ -20,8 +20,10 @@ from vegetrack.aplicacao.calcular_indice import CalcularIndiceDeSaude
 from vegetrack.aplicacao.concluir_ordem import ConcluirOrdemDeServico
 from vegetrack.aplicacao.consultar_fila import ConsultarFilaDeTrechos
 from vegetrack.aplicacao.importar_levantamento import ImportarLevantamento
+from vegetrack.aplicacao.publicador_de_avaliacoes import ObservadorDeAvaliacao
 from vegetrack.aplicacao.registrar_medicao import RegistrarMedicao
 from vegetrack.monitoramento.dominio.avaliacao_de_risco import AvaliacaoDeRisco
+from vegetrack.monitoramento.dominio.eventos import TrechoAvaliado
 
 DADOS_PADRAO = Path(".vegetrack")
 AMOSTRA = Path(__file__).resolve().parents[3] / "dados" / "levantamento_rodoanel_amostra.csv"
@@ -29,6 +31,13 @@ DATA_DA_AMOSTRA = date(2026, 9, 9)
 
 
 # ===== BLOCO 1: composicao_dos_casos_de_uso =====
+class AvisoDeViolacaoNoTerminal(ObservadorDeAvaliacao):
+    # observador acrescentado sem alterar AvaliarTrecho: é o ganho do padrão Observer
+    def ao_avaliar(self, evento: TrechoAvaliado) -> None:
+        if evento.violou_limite:
+            print(f"!! {evento.trecho_id} acima de 30 cm: avisar a coordenação de manutenção")
+
+
 class Aplicacao:
     # raiz de composição: único lugar que escolhe quais adaptadores cumprem as portas
     def __init__(self, pasta_dos_dados: Path) -> None:
@@ -38,6 +47,7 @@ class Aplicacao:
         self.importar = ImportarLevantamento(trechos)
         self.registrar = RegistrarMedicao(trechos)
         self.avaliar = AvaliarTrecho(trechos, ordens, violacoes)
+        self.avaliar.publicador.inscrever(AvisoDeViolacaoNoTerminal())
         self.fila = ConsultarFilaDeTrechos(trechos)
         self.indice = CalcularIndiceDeSaude(self.fila)
         self.concluir = ConcluirOrdemDeServico(trechos, ordens, violacoes)

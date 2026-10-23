@@ -34,6 +34,7 @@ def test_demo_executa_o_fluxo_principal_de_ponta_a_ponta(capsys):
     assert codigo == 0
     assert "32 medições importadas, 1 rejeitadas" in saida
     assert "URGENTE" in saida and "VIOLAÇÃO IMINENTE" in saida
+    assert "!! RD-004 acima de 30 cm" in saida
     assert "Índice de saúde da rodovia" in saida
 
 
