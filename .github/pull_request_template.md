@@ -20,5 +20,5 @@ pytest
 - [ ] **Duplicação:** alguma regra aparece em mais de um lugar?
 - [ ] **Tratamento de erro:** caminhos inválidos falham com erro de negócio claro?
 - [ ] **Testes:** os mesmos testes passam antes e depois? Há teste para o caso negativo e de limite?
-- [ ] **Fronteiras:** o domínio continua sem importar aplicação, adaptadores ou o outro contexto?
-- [ ] **CI verde** neste PR.
+- [ ] - [ ] **Fronteiras:** o domínio continua sem importar aplicação, adaptadores ou o outro contexto?
+- [ ] **Portas:** se uma porta mudou, os adaptadores em memória e em arquivo foram atualizados e os testes de contrato passam?
