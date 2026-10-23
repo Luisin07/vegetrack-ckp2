@@ -1,9 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "vegetrack"
 version = "0.2.0"
 description = "Monitoramento de vegetação na faixa de domínio rodoviária — FIAP Engenharia de Software, Checkpoint 2"
 requires-python = ">=3.12"
 dependencies = []
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
@@ -26,6 +33,8 @@ src = ["src", "tests"]
 [tool.ruff.lint]
 # E/F: erros básicos | I: ordem de imports | N: nomes PEP 8 | B: bugs comuns | UP: sintaxe moderna | SIM: simplificações | C90: complexidade
 select = ["E", "F", "I", "N", "B", "UP", "SIM", "C90"]
+# N818 exige sufixo "Error" em inglês; exceções seguem a linguagem ubíqua (AlturaInvalida, TrechoNaoEncontrado)
+ignore = ["N818"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 8
@@ -47,3 +56,9 @@ name = "Dominio de manutencao nao depende de aplicacao nem de adaptadores"
 type = "forbidden"
 source_modules = ["vegetrack.manutencao"]
 forbidden_modules = ["vegetrack.aplicacao", "vegetrack.adaptadores", "vegetrack.monitoramento"]
+
+[[tool.importlinter.contracts]]
+name = "Aplicacao depende so das portas, nunca dos adaptadores"
+type = "forbidden"
+source_modules = ["vegetrack.aplicacao"]
+forbidden_modules = ["vegetrack.adaptadores"]
